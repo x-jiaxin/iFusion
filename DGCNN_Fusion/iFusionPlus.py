@@ -6,7 +6,8 @@ from DGCNN import DGCNN
 from operations.Pooling import Pooling
 from operations.transform_functions import PCRNetTransform
 from operations.dual import dual_quat_to_extrinsic
-from DirectNetFusion2.fusion import fusion
+from fusion import fusion
+from FPS import FPS_process_pc
 
 
 class iFusionPlus(nn.Module):
@@ -24,7 +25,7 @@ class iFusionPlus(nn.Module):
 
     def forward(self, template, source, maxIteration=2):
         template_global_features = self.pooling(self.feature_model(template))  # [B,1024]
-        template_struct_features = self.pooling(self.dgcnn(template))
+        template_struct_features = self.pooling(self.dgcnn(FPS_process_pc(template, npoints=512)))
 
         # cat->2048        # 2048->1024
         # template_features = torch.cat([template_global_features, template_struct_features], dim=1)
@@ -46,7 +47,7 @@ class iFusionPlus(nn.Module):
 
     def spam(self, template_features, source, est_R, est_t):
         source_global_features = self.pooling(self.feature_model(source))
-        source_struct_features = self.pooling(self.dgcnn(source))
+        source_struct_features = self.pooling(self.dgcnn(FPS_process_pc(source, npoints=512)))
 
         # cat->2048        # 2048->1024
         # self.source_features = torch.cat([source_global_features, source_struct_features], dim=1)
@@ -82,7 +83,7 @@ class iFusionPlus(nn.Module):
 
 
 if __name__ == '__main__':
-    template, source = torch.rand(2, 100, 3).cuda(), torch.rand(2, 100, 3).cuda()
+    template, source = torch.rand(2, 1024, 3).cuda(), torch.rand(2, 1024, 3).cuda()
     pn = PointNet(emb_dims=1024)
     dg = DGCNN()
     net = iFusionPlus(pn, dgcnn=dg)

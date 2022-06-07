@@ -25,8 +25,7 @@ def get_graph_feature(x, k=20, idx=None):
     idx = idx + idx_base
     idx = idx.view(-1)
     _, num_dims, _ = x.size()
-    x = x.transpose(2,
-                    1).contiguous()  # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) #
+    x = x.transpose(2, 1).contiguous()  # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) #
     # batch_size * num_points * k + range(0, batch_size*num_points)
     feature = x.view(batch_size * num_points, -1)[idx, :]
     feature = feature.view(batch_size, num_points, k, num_dims)
@@ -74,8 +73,8 @@ class DGCNN(nn.Module):
 
 
 if __name__ == '__main__':
-    a = torch.rand(2, 100, 3)
-    model = DGCNN()
+    a = torch.rand(2, 512, 3).cuda()
+    model = DGCNN().cuda()
     output = model(a)
-    # output = torch.max(output, 2)[0].contiguous()
+    output = torch.max(output, 2)[0].contiguous()
     print(output.shape)

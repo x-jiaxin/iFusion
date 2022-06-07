@@ -23,7 +23,7 @@ device = torch.device("cuda:0")
 pretrained = ""  # 是否有训练过的模型可用s
 resume = ""  # 最新的检查点文件
 
-exp_name = "iFusion_add1024_fusion"
+exp_name = "iFusion_add1024_fusion_FPS512"
 
 dir_name = os.path.join(
     os.path.dirname(__file__), os.pardir, "checkpoints5", exp_name, "models"
