@@ -2,12 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from Pointnet import PointNet
-from DGCNN import DGCNN
+from localDGCNN import DGCNN
 from operations.Pooling import Pooling
 from operations.transform_functions import PCRNetTransform
 from operations.dual import dual_quat_to_extrinsic
 from fusion import fusion
-from FPS import FPS_process_pc
+
+
+# from FPS import FPS_process_pc
 
 
 class iFusionPlus(nn.Module):
@@ -24,15 +26,23 @@ class iFusionPlus(nn.Module):
         # self.fc5 = nn.Linear(2048, 1024)
 
     def forward(self, template, source, maxIteration=2):
-        template_global_features = self.pooling(self.feature_model(template))  # [B,1024]
-        template_struct_features = self.pooling(self.dgcnn(FPS_process_pc(template, npoints=512)))
+        template_pt_features = self.pooling(self.feature_model(template))  # [B,1024]
+        template_struct_features = self.pooling(self.dgcnn(template))
+        # template_struct_features = self.pooling(self.dgcnn(FPS_process_pc(template, npoints=512)))
 
-        # cat->2048        # 2048->1024
-        # template_features = torch.cat([template_global_features, template_struct_features], dim=1)
+        # cat->2048
+        # template_features = torch.cat([template_pt_features, template_struct_features], dim=1)
+
+        # MLP
         # template_features = F.relu(self.fc5(template_features))
 
         # add
-        template_features = template_global_features + template_struct_features
+        template_features = template_pt_features + template_struct_features
+
+        # fusion
+        # template_features = template_pt_features + \
+        #                     fusion()(template_pt_features.unsqueeze(1), template_struct_features.unsqueeze(1))[
+        #                         0].squeeze(1)
         est_R = torch.eye(3).to(template).view(1, 3, 3).expand(template.size(0), 3, 3).contiguous()  # (Bx3x3)
         est_t = torch.zeros(1, 3).to(template).view(1, 1, 3).expand(template.size(0), 1, 3).contiguous()  # (Bx1x3)
         for i in range(maxIteration):
@@ -46,15 +56,21 @@ class iFusionPlus(nn.Module):
         return result
 
     def spam(self, template_features, source, est_R, est_t):
-        source_global_features = self.pooling(self.feature_model(source))
-        source_struct_features = self.pooling(self.dgcnn(FPS_process_pc(source, npoints=512)))
+        source_pt_features = self.pooling(self.feature_model(source))
+        source_struct_features = self.pooling(self.dgcnn(source))
+        # source_struct_features = self.pooling(self.dgcnn(FPS_process_pc(source, npoints=512)))
 
         # cat->2048        # 2048->1024
-        # self.source_features = torch.cat([source_global_features, source_struct_features], dim=1)
+        # self.source_features = torch.cat([source_pt_features, source_struct_features], dim=1)
         # self.source_features = F.relu(self.fc5(self.source_features))
 
         # add->1024
-        self.source_features = source_global_features + source_struct_features
+        self.source_features = source_pt_features + source_struct_features
+
+        # fusion
+        # self.source_features = source_pt_features + \
+        #                        fusion()(source_pt_features.unsqueeze(1), source_struct_features.unsqueeze(1))[
+        #                            0].squeeze(1)
 
         # fusion
         # template_fusion, source_fusion = fusion()(template_features.unsqueeze(1), self.source_features.unsqueeze(1))
@@ -83,7 +99,7 @@ class iFusionPlus(nn.Module):
 
 
 if __name__ == '__main__':
-    template, source = torch.rand(2, 1024, 3).cuda(), torch.rand(2, 1024, 3).cuda()
+    template, source = torch.rand(2, 100, 3).cuda(), torch.rand(2, 100, 3).cuda()
     pn = PointNet(emb_dims=1024)
     dg = DGCNN()
     net = iFusionPlus(pn, dgcnn=dg)

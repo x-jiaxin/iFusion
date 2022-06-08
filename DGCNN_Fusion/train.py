@@ -9,7 +9,7 @@ from dataset.ModelNet40 import ModelNet40, RegistrationData
 from losses.chamfer_distance import ChamferDistanceLoss
 from Pointnet import PointNet
 from iFusionPlus import iFusionPlus
-from DGCNN import DGCNN
+from localDGCNN import DGCNN
 from operations.transform_functions import PCRNetTransform
 from mse import compute_metrics, summary_metrics
 from utils.SaveLog import SaveLog
@@ -23,7 +23,7 @@ device = torch.device("cuda:0")
 pretrained = ""  # 是否有训练过的模型可用s
 resume = ""  # 最新的检查点文件
 
-exp_name = "iFusion_add1024_fusion_FPS512"
+exp_name = "iFusion_localDG+PT"
 
 dir_name = os.path.join(
     os.path.dirname(__file__), os.pardir, "checkpoints5", exp_name, "models"
