@@ -9,7 +9,7 @@ from dataset.ModelNet40 import ModelNet40, RegistrationData
 from losses.chamfer_distance import ChamferDistanceLoss
 from Pointnet import PointNet
 from iFusionPlus import iFusionPlus
-from localDGCNN import DGCNN
+from localDGCNN_dcp import DGCNN
 from operations.transform_functions import PCRNetTransform
 from mse import compute_metrics, summary_metrics
 from utils.SaveLog import SaveLog
@@ -23,7 +23,8 @@ device = torch.device("cuda:0")
 pretrained = ""  # 是否有训练过的模型可用s
 resume = ""  # 最新的检查点文件
 
-exp_name = "iFusion_localDG+PT"
+# exp_name = "iFusion_localDcpDG_catMlp"
+exp_name = "demo"
 
 dir_name = os.path.join(
     os.path.dirname(__file__), os.pardir, "checkpoints5", exp_name, "models"
@@ -39,8 +40,9 @@ if not os.path.exists(log_dir):
 
 def get_model():
     feature = PointNet(emb_dims=1024)
-    dgcnn = DGCNN()
-    return iFusionPlus(feature_model=feature, dgcnn=dgcnn)
+    # dgcnn = DGCNN()
+    # return iFusionPlus(feature_model=feature, dgcnn=dgcnn)
+    return iFusionPlus(feature_model=feature)
 
 
 def train_one_epoch(device, model, train_loader, optimizer):

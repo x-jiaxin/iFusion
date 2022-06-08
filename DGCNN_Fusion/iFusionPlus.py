@@ -13,10 +13,11 @@ from fusion import fusion
 
 
 class iFusionPlus(nn.Module):
-    def __init__(self, feature_model=PointNet(), dgcnn=DGCNN(), droput=0.0, pooling='max'):
+    # def __init__(self, feature_model=PointNet(), dgcnn=DGCNN(), droput=0.0, pooling='max'):
+    def __init__(self, feature_model=PointNet(), droput=0.0, pooling='max'):
         super(iFusionPlus, self).__init__()
         self.feature_model = feature_model
-        self.dgcnn = dgcnn
+        # self.dgcnn = dgcnn
         self.pooling = Pooling(pooling)
         self.fc1 = nn.Linear(self.feature_model.emb_dims * 2, 1024)
         # self.fc1 = nn.Linear(1088 * 2, 1024)
@@ -27,7 +28,8 @@ class iFusionPlus(nn.Module):
 
     def forward(self, template, source, maxIteration=2):
         template_pt_features = self.pooling(self.feature_model(template))  # [B,1024]
-        template_struct_features = self.pooling(self.dgcnn(template))
+        # template_struct_features = self.pooling(self.dgcnn(template))
+
         # template_struct_features = self.pooling(self.dgcnn(FPS_process_pc(template, npoints=512)))
 
         # cat->2048
@@ -35,9 +37,10 @@ class iFusionPlus(nn.Module):
 
         # MLP
         # template_features = F.relu(self.fc5(template_features))
+        template_features = template_pt_features
 
         # add
-        template_features = template_pt_features + template_struct_features
+        # template_features = template_pt_features + template_struct_features
 
         # fusion
         # template_features = template_pt_features + \
@@ -57,15 +60,18 @@ class iFusionPlus(nn.Module):
 
     def spam(self, template_features, source, est_R, est_t):
         source_pt_features = self.pooling(self.feature_model(source))
-        source_struct_features = self.pooling(self.dgcnn(source))
+        # source_struct_features = self.pooling(self.dgcnn(source))
+
         # source_struct_features = self.pooling(self.dgcnn(FPS_process_pc(source, npoints=512)))
 
         # cat->2048        # 2048->1024
         # self.source_features = torch.cat([source_pt_features, source_struct_features], dim=1)
         # self.source_features = F.relu(self.fc5(self.source_features))
 
+        self.source_features = source_pt_features
+
         # add->1024
-        self.source_features = source_pt_features + source_struct_features
+        # self.source_features = source_pt_features + source_struct_features
 
         # fusion
         # self.source_features = source_pt_features + \
