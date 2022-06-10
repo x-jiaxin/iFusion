@@ -4,6 +4,27 @@
 import torch
 
 
+def get_knn_twopc_index(pc1, pc2, k):
+    """
+    pc1包含于pc2,pc1中的点在pc2中的k近邻点
+    Args:
+        pc1:
+        pc2:
+        k:
+
+    Returns:pc1中的点在pc2中的k近邻点下标
+
+    """
+    B, N, _ = pc1.shape
+    _, M, _ = pc2.shape
+    inner = -2 * torch.matmul(pc1, pc2.transpose(2, 1))
+    xx = torch.sum(pc1 ** 2, dim=2, keepdim=True).view(B, N, 1)
+    yy = torch.sum(pc2 ** 2, dim=2, keepdim=True).view(B, 1, M)
+    pairwise_distance = -xx - inner - yy
+    idx = pairwise_distance.topk(k=k, dim=-1)[1]  # (batch_size, num_points, k)
+    return idx
+
+
 def farthest_point_sample(xyz, npoint, RAN=True):
     """
     Input:
@@ -54,12 +75,12 @@ def index_points(points, idx):
     return new_points
 
 
-def FPS_process_pc(pc, npoints):
+def FPS_sample_pc(pc, npoints):
     index = farthest_point_sample(pc, npoints)
     return index_points(pc, index)
 
 
 if __name__ == '__main__':
     a = torch.rand(10, 100, 3).cuda()
-    a = FPS_process_pc(a, npoints=20)
+    a = FPS_sample_pc(a, npoints=20)
     print(a.shape)
